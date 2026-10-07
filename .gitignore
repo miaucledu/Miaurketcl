@@ -1,7 +1,37 @@
-# Ignorar TODO excepto frontend/dist
+# Ignorar TODO excepto lo necesario para despliegue
 *
 
-# Excepto la carpeta del build del frontend
+# Build del frontend
 !frontend/
 !frontend/dist/
 !frontend/dist/**
+
+# Source del frontend (para build en la instancia)
+!frontend/src/
+!frontend/src/**
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/vite.config.js
+!frontend/index.html
+!frontend/.env
+!frontend/.env.template
+
+# Source del backend
+!backend/
+!backend/src/
+!backend/src/**
+!backend/package.json
+!backend/package-lock.json
+!backend/schema.sql
+!backend/.env
+!backend/.env.template
+
+# Scripts de despliegue
+!deploy/
+!deploy/**
+!deploy/.env
+
+# Nunca subir passwords reales
+deploy/.env
+backend/.env
+frontend/.env
