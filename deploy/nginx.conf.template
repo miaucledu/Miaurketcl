@@ -5,6 +5,7 @@ server {
     index index.html;
 
     location /api/ {
+        rewrite ^/api/(.*)$ /$1 break;
         proxy_pass http://__BACKEND_IP__:__BACKEND_PORT__;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
