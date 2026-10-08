@@ -6,7 +6,7 @@ APP_USER="app"
 DB_NAME="ecommerce_db"
 VPC_CIDR="172.31.0.0/16"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCHEMA_FILE="${SCHEMA_FILE:-$DIR/schema.sql}"
+SCHEMA_FILE="${SCHEMA_FILE:-$DIR/../backend/schema.sql}"
 
 echo ">> Instalando PostgreSQL"
 sudo apt-get update -y
