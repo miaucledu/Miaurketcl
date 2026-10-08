@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || "http://localhost:3003";
+const API = '/api';
 
 export async function apiCall(method, url, token, body = null) {
   const headers = { "Content-Type": "application/json" };
