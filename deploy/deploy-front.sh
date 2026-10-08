@@ -1,41 +1,30 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
+BACK_IP="${1:?Uso: bash deploy/deploy-front.sh <IP_PRIVADA_BACKEND>}"
+BACK_PORT="${BACK_PORT:-3003}"
+[[ "$BACK_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || { echo "IP inválida: $BACK_IP"; exit 1; }
 
-BACKEND_IP="${1:?Uso: deploy-front.sh <IP_PRIVADA_BACKEND>}"
+APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+TEMPLATE="$APP_DIR/deploy/nginx.conf.template"
+[ -f "$APP_DIR/frontend/dist/index.html" ] || { echo "Falta frontend/dist/index.html"; exit 1; }
+[ -f "$TEMPLATE" ] || { echo "Falta $TEMPLATE"; exit 1; }
 
-sudo apt update
-sudo apt install -y nginx
+echo ">> Instalando nginx"
+sudo apt-get update -y
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
 
-sudo rm -rf /var/www/html/*
-sudo cp -r /home/ubuntu/webapp/frontend/dist/* /var/www/html/
+echo ">> Copiando dist (borrando versión anterior)"
+sudo rm -rf /var/www/app
+sudo mkdir -p /var/www/app
+sudo cp -r "$APP_DIR/frontend/dist/." /var/www/app/
+sudo chmod -R a+rX /var/www/app
 
-sudo tee /etc/nginx/sites-available/default > /dev/null <<EOF
-server {
-    listen 80;
-    server_name _;
-    root /var/www/html;
-    index index.html;
-
-    location /api/ {
-        proxy_pass http://${BACKEND_IP}:3003;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    }
-
-    location /uploads/ {
-        proxy_pass http://${BACKEND_IP}:3003;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-    }
-
-    location / {
-        try_files \$uri \$uri/ /index.html;
-    }
-}
-EOF
+echo ">> Generando config de nginx (backend $BACK_IP:$BACK_PORT)"
+sed "s/__BACKEND_IP__/$BACK_IP/g; s/__BACKEND_PORT__/$BACK_PORT/g" "$TEMPLATE" \
+  | sudo tee /etc/nginx/sites-available/app >/dev/null
+sudo ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app
+sudo rm -f /etc/nginx/sites-enabled/default
 
 sudo nginx -t
 sudo systemctl restart nginx
-
-echo "Frontend listo en http://$(curl -s ifconfig.me)"
+echo ">> Listo. Abre http://<IP_PUBLICA_DEL_FRONT>/"
