@@ -40,6 +40,9 @@ docs/
 !deploy/**
 !deploy/.env
 
+# n8n
+!docker-compose.yml
+
 # Nunca subir passwords reales
 deploy/.env
 backend/.env
