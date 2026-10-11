@@ -9,7 +9,7 @@ class PedidoController {
       return res.status(400).json({ msg: "Items requeridos" });
     }
     try {
-      const id = await this.pedidoService.crearPedido(req.user.id, items);
+      const id = await this.pedidoService.crearPedido(req.user.id, items, req.user.email, req.user.nombre);
       res.status(201).json({ msg: "Pedido creado", id });
     } catch (e) {
       res.status(e.status || 500).json({ msg: e.message });

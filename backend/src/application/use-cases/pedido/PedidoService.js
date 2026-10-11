@@ -7,7 +7,7 @@ class PedidoService {
     this.notificationService = notificationService;
   }
 
-  async crearPedido(usuarioId, items) {
+  async crearPedido(usuarioId, items, usuarioEmail, usuarioNombre) {
     const itemsConDetalle = [];
     let total = 0;
 
@@ -38,12 +38,10 @@ class PedidoService {
     const pedidoId = await this.pedidoRepository.create(pedido);
 
     if (this.notificationService) {
-      const pedidoCompleto = await this.pedidoRepository.findById(pedidoId);
-      console.log("DEBUG pedidoCompleto:", JSON.stringify(pedidoCompleto));
       await this.notificationService.notifyOrderCreated({
         id: pedidoId,
-        clientEmail: pedidoCompleto.client_email,
-        clientName: pedidoCompleto.client_nombre,
+        clientEmail: usuarioEmail,
+        clientName: usuarioNombre,
         items: itemsConDetalle,
         total,
         paymentInstructions: "Realiza tu transferencia a la cuenta bancaria: Banco XXX, CTA 1234-5678, CBU 0000000000000000000000",
