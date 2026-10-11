@@ -39,6 +39,7 @@ class PedidoService {
 
     if (this.notificationService) {
       const pedidoCompleto = await this.pedidoRepository.findById(pedidoId);
+      console.log("DEBUG pedidoCompleto:", JSON.stringify(pedidoCompleto));
       await this.notificationService.notifyOrderCreated({
         id: pedidoId,
         clientEmail: pedidoCompleto.client_email,
