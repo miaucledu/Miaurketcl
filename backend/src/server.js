@@ -12,6 +12,9 @@ const ProductoService = require("./application/use-cases/producto/ProductoServic
 const SolicitudInteresService = require("./application/use-cases/solicitud/SolicitudInteresService");
 const NotificationService = require("./application/use-cases/solicitud/NotificationService");
 const GmailNotificationAdapter = require("./infrastructure/adapters/out/notifications/GmailNotificationAdapter");
+const PedidoService = require("./application/use-cases/pedido/PedidoService");
+const PostgresPedidoRepository = require("./infrastructure/adapters/out/persistence/PostgresPedidoRepository");
+const PedidoController = require("./interfaces/pedidoController");
 const UserController = require("./interfaces/userController");
 const ProductoController = require("./interfaces/productoController");
 const SolicitudInteresController = require("./interfaces/solicitudController");
@@ -21,6 +24,7 @@ const roleMiddleware = require("./infrastructure/adapters/in/http/middlewares/ro
 const upload = require("./infrastructure/adapters/in/http/middlewares/upload.middleware");
 const productoRoutes = require("./infrastructure/adapters/in/http/routes/productoRoutes");
 const solicitudRoutes = require("./infrastructure/adapters/in/http/routes/solicitudRoutes");
+const pedidoRoutes = require("./infrastructure/adapters/in/http/routes/pedidoRoutes");
 
 const app = express();
 app.use(cors());
@@ -34,6 +38,9 @@ const productoService = new ProductoService(productoRepository);
 const notificationPort = new GmailNotificationAdapter();
 const notificationService = new NotificationService(notificationPort);
 const solicitudService = new SolicitudInteresService(solicitudRepository, productoRepository, notificationService);
+const pedidoRepository = new PostgresPedidoRepository();
+const pedidoService = new PedidoService(pedidoRepository, productoRepository, notificationService);
+const pedidoController = new PedidoController(pedidoService);
 const captchaStore = new InMemoryCaptchaService();
 const userController = new UserController(userService, captchaStore);
 const productoController = new ProductoController(productoService);
@@ -62,6 +69,9 @@ productoRoutes(app, productoController, upload, authMiddleware, roleMiddleware);
 
 // Solicitudes
 solicitudRoutes(app, solicitudController, authMiddleware, roleMiddleware);
+
+// Pedidos
+pedidoRoutes(app, pedidoController, authMiddleware, roleMiddleware);
 
 // Imágenes estáticas
 app.use("/uploads/productos", express.static(path.join(__dirname, "../../uploads/productos")));

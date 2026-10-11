@@ -31,3 +31,20 @@ CREATE TABLE solicitud_interes (
         CHECK (estado IN ('interesado','contactado','cerrado')),
     creado_en TIMESTAMP NOT NULL DEFAULT now()
 );
+
+CREATE TABLE pedido (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cliente_id UUID NOT NULL REFERENCES usuario(id),
+    total NUMERIC(12,2) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente_pago'
+        CHECK (estado IN ('pendiente_pago','pagado','cancelado')),
+    creado_en TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE pedido_item (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pedido_id UUID NOT NULL REFERENCES pedido(id),
+    producto_id UUID NOT NULL REFERENCES producto(id),
+    cantidad INTEGER NOT NULL DEFAULT 1 CHECK (cantidad > 0),
+    precio_unitario NUMERIC(10,2) NOT NULL
+);
