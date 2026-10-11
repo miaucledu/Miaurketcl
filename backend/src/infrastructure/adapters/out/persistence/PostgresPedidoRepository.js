@@ -32,14 +32,41 @@ class PostgresPedidoRepository {
     }
   }
 
-  async findById(id) {
+  async findByClienteId(clienteId) {
     const result = await pool.query(
-      `SELECT p.*, json_agg(json_build_object('productoId', pi.producto_id, 'cantidad', pi.cantidad, 'precio', pi.precio_unitario, 'nombre', pr.nombre)) as items
+      `SELECT p.id, p.total, p.estado, p.creado_en,
+        json_agg(json_build_object(
+          'productoId', pi.producto_id,
+          'cantidad', pi.cantidad,
+          'precio', pi.precio_unitario,
+          'nombre', pr.nombre
+        )) as items
        FROM pedido p
        JOIN pedido_item pi ON p.id = pi.pedido_id
        JOIN producto pr ON pi.producto_id = pr.id
+       WHERE p.cliente_id = $1
+       GROUP BY p.id
+       ORDER BY p.creado_en DESC`,
+      [clienteId]
+    );
+    return result.rows;
+  }
+
+  async findById(id) {
+    const result = await pool.query(
+      `SELECT p.*, u.email as client_email, u.nombre as client_nombre,
+        json_agg(json_build_object(
+          'productoId', pi.producto_id,
+          'cantidad', pi.cantidad,
+          'precio', pi.precio_unitario,
+          'nombre', pr.nombre
+        )) as items
+       FROM pedido p
+       JOIN pedido_item pi ON p.id = pi.pedido_id
+       JOIN producto pr ON pi.producto_id = pr.id
+       JOIN usuario u ON p.cliente_id = u.id
        WHERE p.id = $1
-       GROUP BY p.id`,
+       GROUP BY p.id, u.email, u.nombre`,
       [id]
     );
     return result.rows[0] || null;

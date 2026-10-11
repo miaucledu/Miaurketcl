@@ -51,6 +51,10 @@ class PedidoService {
 
     return pedidoId;
   }
+
+  async listarPedidosCliente(usuarioId) {
+    return this.pedidoRepository.findByClienteId(usuarioId);
+  }
 }
 
 module.exports = PedidoService;

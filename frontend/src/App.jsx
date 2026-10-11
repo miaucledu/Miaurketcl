@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "./context/AuthContext";
+import { useCart } from "./context/CartContext";
 import { login as apiLogin, register, getCaptcha } from "./services/authService";
 import { apiCall } from "./services/apiClient";
+import { createPedido, getMisPedidos } from "./services/pedidoService";
 import "./App.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3003";
@@ -831,22 +833,27 @@ function ProductoPage() {
 
 function PedidoPage() {
   const { token } = useAuth();
+  const { cartItems, addToCart, removeFromCart, clearCart, total } = useCart();
   const [tab, setTab] = useState("catalogo");
   const [productos, setProductos] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
+  const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState(null);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const cargar = useCallback(async () => {
     setLoading(true);
     setMsg(null);
     try {
-      const [c, s] = await Promise.all([
+      const [c, s, p] = await Promise.all([
         apiCall("GET", "/productos/catalogo", token),
         apiCall("GET", "/solicitudes/mias", token),
+        getMisPedidos(token),
       ]);
       setProductos(Array.isArray(c) ? c : []);
       setSolicitudes(Array.isArray(s) ? s : []);
+      setPedidos(Array.isArray(p) ? p : []);
     } catch (err) {
       setMsg({ type: "error", text: err.message });
     } finally {
@@ -882,7 +889,26 @@ function PedidoPage() {
     }
   };
 
+  const checkout = async () => {
+    if (cartItems.length === 0) return;
+    setCheckingOut(true);
+    setMsg(null);
+    try {
+      const items = cartItems.map((i) => ({ productoId: i.id, cantidad: i.cantidad }));
+      await createPedido(items, token);
+      clearCart();
+      await cargar();
+      setMsg({ type: "ok", text: "¡Pedido creado! Revisá tu email para las instrucciones de pago." });
+      setTab("pedidos");
+    } catch (err) {
+      setMsg({ type: "error", text: err.message });
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
   const yaPedida = new Set(solicitudes.map((s) => s.producto_id));
+  const enCarrito = new Set(cartItems.map((i) => i.id));
 
   return (
     <div className="page">
@@ -891,40 +917,33 @@ function PedidoPage() {
       <div className="card">
         <div className="card-head">
           <div className="grow">
-            <h3>{tab === "catalogo" ? "Catálogo" : "Mis solicitudes"}</h3>
+            <h3>
+              {tab === "catalogo" && "Catálogo"}
+              {tab === "carrito" && `Carrito (${cartItems.length})`}
+              {tab === "mias" && `Mis solicitudes (${solicitudes.length})`}
+              {tab === "pedidos" && `Mis pedidos (${pedidos.length})`}
+            </h3>
             <p>
-              {tab === "catalogo"
-                ? `${productos.length} producto(s) disponibles de vendedores verificados.`
-                : `${solicitudes.length} solicitud(es) de interés.`}
+              {tab === "catalogo" && `${productos.length} producto(s) disponibles.`}
+              {tab === "carrito" && (cartItems.length > 0 ? `Total: ${money(total)}` : "Tu carrito está vacío.")}
+              {tab === "mias" && `${solicitudes.length} solicitud(es) de interés.`}
+              {tab === "pedidos" && `${pedidos.length} pedido(s) realizado(s).`}
             </p>
           </div>
           <div className="btn-row">
-            <button
-              className={`btn btn-sm ${tab === "catalogo" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => setTab("catalogo")}
-            >
-              Catálogo
-            </button>
-            <button
-              className={`btn btn-sm ${tab === "mias" ? "btn-primary" : "btn-ghost"}`}
-              onClick={() => setTab("mias")}
-            >
-              Mis solicitudes ({solicitudes.length})
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={cargar}>
-              Actualizar
-            </button>
+            <button className={`btn btn-sm ${tab === "catalogo" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("catalogo")}>Catálogo</button>
+            <button className={`btn btn-sm ${tab === "carrito" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("carrito")}>Carrito ({cartItems.length})</button>
+            <button className={`btn btn-sm ${tab === "mias" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("mias")}>Solicitudes</button>
+            <button className={`btn btn-sm ${tab === "pedidos" ? "btn-primary" : "btn-ghost"}`} onClick={() => setTab("pedidos")}>Pedidos</button>
+            <button className="btn btn-ghost btn-sm" onClick={cargar}>Actualizar</button>
           </div>
         </div>
 
         {loading ? (
-          <Empty title="Cargando…" text="Obteniendo datos del catálogo." />
+          <Empty title="Cargando…" text="Obteniendo datos." />
         ) : tab === "catalogo" ? (
           productos.length === 0 ? (
-            <Empty
-              title="Catálogo vacío"
-              text="Aún no hay productos aprobados para mostrar."
-            />
+            <Empty title="Catálogo vacío" text="Aún no hay productos aprobados." />
           ) : (
             <div className="grid-products">
               {productos.map((p) => (
@@ -942,45 +961,88 @@ function PedidoPage() {
                     <div className="product-foot">
                       <span className="price">{money(p.precio)}</span>
                     </div>
-                    <button
-                      className={`btn btn-sm btn-block ${yaPedida.has(p.id) ? "btn-ghost" : "btn-primary"}`}
-                      disabled={yaPedida.has(p.id)}
-                      onClick={() => marcarInteres(p.id)}
-                    >
-                      {yaPedida.has(p.id) ? "Interés registrado" : "Me interesa"}
-                    </button>
+                    <div className="btn-row">
+                      <button
+                        className={`btn btn-sm ${enCarrito.has(p.id) ? "btn-ghost" : "btn-primary"}`}
+                        style={{ flex: 1 }}
+                        disabled={enCarrito.has(p.id)}
+                        onClick={() => addToCart(p)}
+                      >
+                        {enCarrito.has(p.id) ? "En carrito" : "Agregar"}
+                      </button>
+                      <button
+                        className={`btn btn-sm ${yaPedida.has(p.id) ? "btn-ghost" : "btn-ghost"}`}
+                        style={{ flex: 1 }}
+                        disabled={yaPedida.has(p.id)}
+                        onClick={() => marcarInteres(p.id)}
+                      >
+                        {yaPedida.has(p.id) ? "Interés registrado" : "Me interesa"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )
-        ) : solicitudes.length === 0 ? (
-          <Empty
-            title="Sin solicitudes"
-            text="Explorá el catálogo y marcá tu interés en lo que te guste."
-          />
-        ) : (
-          <div className="list">
-            {solicitudes.map((s) => (
-              <div className="list-item" key={s.id}>
-                <div className="grow">
-                  <b>{nombreDe(s)}</b>
-                  <small>
-                    {s.creado_en
-                      ? new Date(s.creado_en).toLocaleDateString("es-UY")
-                      : ""}
-                  </small>
-                </div>
-                <Badge kind={s.estado}>{s.estado}</Badge>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => cancelar(s.id)}
-                >
-                  Cancelar
+        ) : tab === "carrito" ? (
+          cartItems.length === 0 ? (
+            <Empty title="Carrito vacío" text="Agregá productos desde el catálogo." />
+          ) : (
+            <>
+              <div className="list">
+                {cartItems.map((item) => (
+                  <div className="list-item" key={item.id}>
+                    <div className="grow">
+                      <b>{item.nombre}</b>
+                      <small>{item.cantidad} x {money(item.precio)}</small>
+                    </div>
+                    <span className="price">{money(Number(item.precio) * item.cantidad)}</span>
+                    <button className="btn btn-danger btn-sm" onClick={() => removeFromCart(item.id)}>Quitar</button>
+                  </div>
+                ))}
+              </div>
+              <div className="card-head" style={{ marginTop: 16, justifyContent: "space-between" }}>
+                <h3>Total: {money(total)}</h3>
+                <button className="btn btn-primary" disabled={checkingOut || cartItems.length === 0} onClick={checkout}>
+                  {checkingOut ? "Procesando…" : "Finalizar compra"}
                 </button>
               </div>
-            ))}
-          </div>
+            </>
+          )
+        ) : tab === "mias" ? (
+          solicitudes.length === 0 ? (
+            <Empty title="Sin solicitudes" text="Explorá el catálogo y marcá tu interés." />
+          ) : (
+            <div className="list">
+              {solicitudes.map((s) => (
+                <div className="list-item" key={s.id}>
+                  <div className="grow">
+                    <b>{nombreDe(s)}</b>
+                    <small>{s.creado_en ? new Date(s.creado_en).toLocaleDateString("es-UY") : ""}</small>
+                  </div>
+                  <Badge kind={s.estado}>{s.estado}</Badge>
+                  <button className="btn btn-ghost btn-sm" onClick={() => cancelar(s.id)}>Cancelar</button>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          pedidos.length === 0 ? (
+            <Empty title="Sin pedidos" text="Finalizá una compra desde el carrito." />
+          ) : (
+            <div className="list">
+              {pedidos.map((p) => (
+                <div className="list-item" key={p.id}>
+                  <div className="grow">
+                    <b>Pedido #{String(p.id).slice(0, 8)}</b>
+                    <small>{p.items?.map((i) => `${i.cantidad}x ${i.nombre}`).join(", ")}</small>
+                  </div>
+                  <span className="price">{money(p.total)}</span>
+                  <Badge kind={p.estado === "pendiente_pago" ? "pendiente" : p.estado}>{p.estado}</Badge>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
     </div>

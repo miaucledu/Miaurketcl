@@ -15,6 +15,15 @@ class PedidoController {
       res.status(e.status || 500).json({ msg: e.message });
     }
   }
+
+  async listarMios(req, res) {
+    try {
+      const pedidos = await this.pedidoService.listarPedidosCliente(req.user.id);
+      res.json(pedidos);
+    } catch (e) {
+      res.status(e.status || 500).json({ msg: e.message });
+    }
+  }
 }
 
 module.exports = PedidoController;
