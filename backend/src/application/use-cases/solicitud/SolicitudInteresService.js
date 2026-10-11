@@ -3,9 +3,10 @@ const SolicitudInteresRepositoryPort = require("../../../domain/solicitudInteres
 const ProductoRepositoryPort = require("../../../domain/productoRepositoryPort");
 
 class SolicitudInteresService {
-  constructor(solicitudRepository, productoRepository) {
+  constructor(solicitudRepository, productoRepository, notificationService = null) {
     this.solicitudRepository = solicitudRepository;
     this.productoRepository = productoRepository;
+    this.notificationService = notificationService;
   }
 
   async crear(usuario_id, producto_id) {
