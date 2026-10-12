@@ -1,29 +1,59 @@
+/* Miaurketcl — "Jardín de papel" (diseño Lovable adaptado a la app).
+   Paleta: crema, verde salvia, lavanda, menta y durazno. */
+
 :root {
-  --bg: #fff7fb;
-  --surface: #ffffff;
-  --surface-2: #fff5fa;
-  --ink: #5b4b5e;
-  --ink-2: #7a6b7d;
-  --muted: #a396ab;
-  --line: #ffe3ef;
-  --brand: #ff9fca;
-  --brand-2: #c9a7ff;
-  --brand-ink: #5b3a4e;
-  --brand-soft: #ffeef7;
-  --ok: #5fca9d;
-  --ok-soft: #e2fbf0;
-  --warn: #f5b25c;
-  --warn-soft: #fff4e0;
-  --bad: #ff92a0;
-  --bad-soft: #ffe9ec;
-  --info: #8ecdf5;
-  --info-soft: #eaf6ff;
-  --neutral-soft: #f7f0f6;
-  --radius: 22px;
-  --radius-s: 14px;
-  --shadow: 0 2px 6px rgba(255, 159, 202, 0.10), 0 12px 28px -14px rgba(201, 167, 255, 0.35);
-  --shadow-lg: 0 4px 10px rgba(255, 159, 202, 0.16), 0 28px 50px -18px rgba(201, 167, 255, 0.45);
-  --sans: "Quicksand", "Baloo 2", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --bg: #fcf4f3;
+  --surface: #fffefa;
+  --surface-2: #fae8e9;
+  --line: #d4dab5;
+  --ink: #41482f;
+  --ink-soft: #646a52;
+  --brand: #d3e39f;
+  --brand-strong: #47632e;
+  --brand-soft: #edf3db;
+  --lavender: #c8bbde;
+  --lavender-soft: #f0eaf7;
+  --lavender-ink: #64517f;
+  --mint: #b9d6bd;
+  --mint-soft: #e7f1e6;
+  --mint-ink: #3c6242;
+  --peach: #f1d48b;
+  --peach-soft: #fcf0ce;
+  --peach-ink: #795b20;
+  --danger: #c05e72;
+  --danger-soft: #fae5e9;
+  --danger-ink: #8d344b;
+  --paper-grid: #eadedc;
+  --stitch: #a7b881;
+  --pink-ink: #99566a;
+  --grad-brand: linear-gradient(150deg, var(--brand), #e2edbc);
+
+  /* aliases semánticos que usa la app existente */
+  --muted: var(--ink-soft);
+  --ok: var(--mint-ink);
+  --ok-soft: var(--mint-soft);
+  --warn: var(--peach-ink);
+  --warn-soft: var(--peach-soft);
+  --bad: var(--danger);
+  --bad-soft: var(--danger-soft);
+  --info: var(--lavender-ink);
+  --info-soft: var(--lavender-soft);
+  --neutral-soft: var(--surface-2);
+  --brand-ink: var(--brand-strong);
+
+  --radius-xs: 5px;
+  --radius-s: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow-xs: 0 2px 3px #99566a0a;
+  --shadow-sm: 0 4px 12px #99566a0e;
+  --shadow: 0 8px 24px #99566a18;
+  --shadow-lg: 0 18px 44px #99566a1c;
+  --ring: 0 0 0 3px #a7b88166;
+  --font-body: "Nunito", sans-serif;
+  --font-display: "Quicksand", "Nunito", sans-serif;
+  --t: 180ms;
+  --ease: cubic-bezier(0.3, 0.7, 0.4, 1);
   color-scheme: light;
 }
 
@@ -31,14 +61,15 @@
 
 body {
   margin: 0;
-  font-family: var(--sans);
+  font-family: var(--font-body);
   font-weight: 600;
-  background:
-    radial-gradient(700px 420px at 8% -5%, rgba(255, 182, 213, 0.45), transparent 62%),
-    radial-gradient(760px 400px at 96% -8%, rgba(201, 167, 255, 0.40), transparent 62%),
-    radial-gradient(900px 500px at 50% 110%, rgba(160, 232, 210, 0.35), transparent 65%),
-    var(--bg);
   color: var(--ink);
+  letter-spacing: 0;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--paper-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-grid) 1px, transparent 1px);
+  background-size: 22px 22px;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
 }
@@ -52,9 +83,15 @@ body {
 h1, h2, h3, h4 {
   margin: 0;
   color: var(--ink);
-  font-family: "Baloo 2", var(--sans);
+  font-family: var(--font-display);
   letter-spacing: 0;
   font-weight: 700;
 }
-p { margin: 0; color: var(--ink-2); }
-a { color: #e27ab0; }
+p { margin: 0; color: var(--ink-soft); }
+a { color: var(--pink-ink); }
+
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--brand-strong);
+  outline-offset: 4px;
+}

@@ -56,10 +56,22 @@ function Alert({ type, children }) {
 function Empty({ title, text }) {
   return (
     <div className="empty">
-      <b>{title}</b>
+      <img
+        src="/images/empty.png"
+        alt=""
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
+      />
+      {title && <b>{title}</b>}
       <p>{text}</p>
     </div>
   );
+}
+
+function ProductPhoto({ filename, nombre }) {
+  const [failed, setFailed] = useState(false);
+  const url = imgUrl(filename) || "/images/placeholder.png";
+  if (failed) return <span className="noimg">Sin foto</span>;
+  return <img src={url} alt={nombre} onError={() => setFailed(true)} />;
 }
 
 function useCaptcha() {
@@ -589,11 +601,7 @@ function AdminPage() {
             {productos.map((p) => (
               <div className="product-card" key={p.id}>
                 <div className="product-img">
-                  {imgUrl(p.imagen_filename) ? (
-                    <img src={imgUrl(p.imagen_filename)} alt={p.nombre} />
-                  ) : (
-                    <span className="noimg">Sin foto</span>
-                  )}
+                  <ProductPhoto filename={p.imagen_filename} nombre={p.nombre} />
                 </div>
                 <div className="product-body">
                   <h4>{p.nombre}</h4>
@@ -805,11 +813,7 @@ function ProductoPage() {
             {productos.map((p) => (
               <div className="product-card" key={p.id}>
                 <div className="product-img">
-                  {imgUrl(p.imagen_filename) ? (
-                    <img src={imgUrl(p.imagen_filename)} alt={p.nombre} />
-                  ) : (
-                    <span className="noimg">Sin foto</span>
-                  )}
+                  <ProductPhoto filename={p.imagen_filename} nombre={p.nombre} />
                 </div>
                 <div className="product-body">
                   <h4>{p.nombre}</h4>
@@ -954,11 +958,7 @@ function PedidoPage() {
               {productos.map((p) => (
                 <div className="product-card" key={p.id}>
                   <div className="product-img">
-                    {imgUrl(p.imagen_filename) ? (
-                      <img src={imgUrl(p.imagen_filename)} alt={p.nombre} />
-                    ) : (
-                      <span className="noimg">Sin foto</span>
-                    )}
+                    <ProductPhoto filename={p.imagen_filename} nombre={p.nombre} />
                   </div>
                   <div className="product-body">
                     <h4>{p.nombre}</h4>

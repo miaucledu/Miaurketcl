@@ -6,7 +6,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { getDashboard } from "../services/analyticsService";
 
-const COLORS = ["#4f46e5", "#06b6d4", "#f59e0b", "#ef4444", "#10b981", "#8b5cf6"];
+const COLORS = ["#47632e", "#c8bbde", "#f1d48b", "#c05e72", "#b9d6bd", "#99566a"];
 
 const money = (v) =>
   `$${Number(v ?? 0).toLocaleString("es-UY", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
@@ -173,7 +173,7 @@ export default function AnalyticsPage() {
                       <XAxis type="number" />
                       <YAxis type="category" dataKey="nombre" width={120} tick={{ fontSize: 12 }} />
                       <Tooltip formatter={(v, name) => name === "monto" ? money(v) : v} />
-                      <Bar dataKey="unidades" fill="#4f46e5" radius={[0, 4, 4, 0]} name="unidades" />
+                      <Bar dataKey="unidades" fill="#47632e" radius={[0, 4, 4, 0]} name="unidades" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}

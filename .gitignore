@@ -18,12 +18,18 @@ docs/
 # Source del frontend (para build en la instancia)
 !frontend/src/
 !frontend/src/**
+!frontend/public/
+!frontend/public/**
 !frontend/package.json
 !frontend/package-lock.json
 !frontend/vite.config.js
 !frontend/index.html
 !frontend/.env
 !frontend/.env.template
+
+# Diseño de referencia (Lovable)
+!lovable-design/
+!lovable-design/**
 
 # Source del backend
 !backend/
