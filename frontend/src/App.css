@@ -185,6 +185,7 @@ input[type="file"].input { padding: 8px 10px; background: var(--surface); }
 }
 .auth-brand { display: flex; align-items: center; gap: 11px; }
 .auth-brand .brand-name { font-size: 21px; }
+.auth-mascot { display: block; width: 150px; max-width: 45%; margin: -6px auto -14px; }
 .auth-card.single {
   border: 2px dashed var(--stitch); border-radius: var(--radius-lg);
   max-width: 440px; width: 100%;
@@ -277,6 +278,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 /* pending */
 .pending-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 22px; }
 .pending-card { max-width: 460px; width: 100%; text-align: center; padding: 44px 36px; }
+.pending-mascot { display: block; width: 130px; margin: 0 auto 12px; }
 .pending-icon {
   width: 66px; height: 66px; border-radius: 58% 42% 55% 45%; margin: 0 auto 18px;
   background: var(--brand); border: 1px dashed var(--stitch);

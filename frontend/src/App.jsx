@@ -57,7 +57,7 @@ function Empty({ title, text }) {
   return (
     <div className="empty">
       <img
-        src="/images/empty.png"
+        src="/images/empty.webp"
         alt=""
         onError={(e) => { e.currentTarget.style.display = "none"; }}
       />
@@ -157,6 +157,12 @@ function LoginPage({ onGoRegister }) {
   return (
     <div className="auth-single">
       <AuthBrand />
+      <img
+        className="auth-mascot"
+        src="/images/mascot-cinna.png"
+        alt=""
+        onError={(e) => { e.currentTarget.style.display = "none"; }}
+      />
       <div className="auth-card single">
         <h2>Bienvenido de nuevo</h2>
         <p className="lede">Ingresá con tu cuenta para continuar.</p>
@@ -325,7 +331,12 @@ function PendientePage() {
   return (
     <div className="pending-wrap">
       <div className="card pending-card">
-        <div className="pending-icon">{initials(user?.nombre)}</div>
+        <img
+          className="pending-mascot"
+          src="/images/mascot-cinna.png"
+          alt=""
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+        />
         <h2>Cuenta pendiente de aprobación</h2>
         <p>
           Hola <b>{user?.nombre ?? user?.email}</b>, tu cuenta está en revisión.
