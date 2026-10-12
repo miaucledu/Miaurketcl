@@ -24,6 +24,46 @@ class PedidoController {
       res.status(e.status || 500).json({ msg: e.message });
     }
   }
+
+  async listarVentas(req, res) {
+    try {
+      const esAdmin = req.user.rol === "admin";
+      const pedidos = await this.pedidoService.listarVentasVendedor(req.user.id, esAdmin);
+      res.json(pedidos);
+    } catch (e) {
+      res.status(e.status || 500).json({ msg: e.message });
+    }
+  }
+
+  async marcarPagado(req, res) {
+    try {
+      const esAdmin = req.user.rol === "admin";
+      const result = await this.pedidoService.marcarPagado(req.params.id, req.user.id, esAdmin);
+      res.json({ msg: "Pedido marcado como pagado", ...result });
+    } catch (e) {
+      res.status(e.status || 500).json({ msg: e.message });
+    }
+  }
+
+  async cancelar(req, res) {
+    try {
+      const esAdmin = req.user.rol === "admin";
+      const result = await this.pedidoService.cancelarPedido(req.params.id, req.user.id, esAdmin);
+      res.json({ msg: "Pedido cancelado", ...result });
+    } catch (e) {
+      res.status(e.status || 500).json({ msg: e.message });
+    }
+  }
+
+  async marcarEnviado(req, res) {
+    try {
+      const esAdmin = req.user.rol === "admin";
+      const result = await this.pedidoService.marcarEnviado(req.params.id, req.user.id, esAdmin);
+      res.json({ msg: "Pedido marcado como enviado", ...result });
+    } catch (e) {
+      res.status(e.status || 500).json({ msg: e.message });
+    }
+  }
 }
 
 module.exports = PedidoController;

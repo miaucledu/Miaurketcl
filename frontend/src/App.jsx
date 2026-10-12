@@ -3,7 +3,8 @@ import { useAuth } from "./context/AuthContext";
 import { useCart } from "./context/CartContext";
 import { login as apiLogin, register, getCaptcha } from "./services/authService";
 import { apiCall } from "./services/apiClient";
-import { createPedido, getMisPedidos } from "./services/pedidoService";
+import { createPedido, getMisPedidos, marcarPagado, cancelarPedido, getVentas, marcarEnviado } from "./services/pedidoService";
+import AnalyticsPage from "./components/AnalyticsPage";
 import "./App.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3003";
@@ -29,10 +30,14 @@ function Badge({ kind, children }) {
   const map = {
     aprobado: "b-ok",
     activo: "b-ok",
+    pagado: "b-ok",
+    enviado: "b-info",
     interesada: "b-info",
     interesado: "b-info",
     contactado: "b-brand",
     pendiente: "b-warn",
+    pendiente_pago: "b-warn",
+    cancelado: "b-bad",
     denegado: "b-bad",
     rechazado: "b-bad",
     cerrado: "b-neutral",
@@ -1038,11 +1043,126 @@ function PedidoPage() {
                     <small>{p.items?.map((i) => `${i.cantidad}x ${i.nombre}`).join(", ")}</small>
                   </div>
                   <span className="price">{money(p.total)}</span>
-                  <Badge kind={p.estado === "pendiente_pago" ? "pendiente" : p.estado}>{p.estado}</Badge>
+                  <Badge kind={p.estado}>{p.estado.replace("_", " ")}</Badge>
+                  <div className="row-actions">
+                    {p.estado === "pendiente_pago" && (
+                      <button
+                        className="btn btn-ok btn-sm"
+                        onClick={async () => {
+                          try {
+                            await marcarPagado(p.id, token);
+                            await cargar();
+                            setMsg({ type: "ok", text: "Pedido marcado como pagado." });
+                          } catch (err) {
+                            setMsg({ type: "error", text: err.message });
+                          }
+                        }}
+                      >
+                        Ya pagué
+                      </button>
+                    )}
+                    {(p.estado === "pendiente_pago" || p.estado === "pagado") && (
+                      <button
+                        className="btn btn-danger btn-sm"
+                        onClick={async () => {
+                          if (!window.confirm("¿Cancelar este pedido?")) return;
+                          try {
+                            await cancelarPedido(p.id, token);
+                            await cargar();
+                            setMsg({ type: "ok", text: "Pedido cancelado." });
+                          } catch (err) {
+                            setMsg({ type: "error", text: err.message });
+                          }
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ================= vendedor: ventas ================= */
+
+function VentasPage() {
+  const { token } = useAuth();
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState(null);
+
+  const cargar = useCallback(async () => {
+    setLoading(true);
+    setMsg(null);
+    try {
+      const d = await getVentas(token);
+      setPedidos(Array.isArray(d) ? d : []);
+    } catch (err) {
+      setMsg({ type: "error", text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
+  const enviar = async (p) => {
+    try {
+      await marcarEnviado(p.id, token);
+      await cargar();
+      setMsg({ type: "ok", text: "Pedido marcado como enviado." });
+    } catch (err) {
+      setMsg({ type: "error", text: err.message });
+    }
+  };
+
+  const mios = (p) => p.items?.map((i) => `${i.cantidad}x ${i.nombre}`).join(", ");
+
+  return (
+    <div className="page">
+      <Alert type={msg?.type}>{msg?.text}</Alert>
+
+      <div className="card">
+        <div className="card-head">
+          <div className="grow">
+            <h3>Ventas</h3>
+            <p>Pedidos que incluyen tus productos.</p>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={cargar}>Actualizar</button>
+        </div>
+
+        {loading ? (
+          <Empty title="Cargando…" text="Obteniendo tus ventas." />
+        ) : pedidos.length === 0 ? (
+          <Empty title="Sin ventas todavía" text="Cuando alguien compre tus productos vas a ver los pedidos acá." />
+        ) : (
+          <div className="list">
+            {pedidos.map((p) => (
+              <div className="list-item" key={p.id}>
+                <div className="grow">
+                  <b>Pedido #{String(p.id).slice(0, 8)}</b>
+                  <small>
+                    {p.client_nombre} ({p.client_email}) · {mios(p)}
+                  </small>
+                </div>
+                <span className="price">{money(p.total)}</span>
+                <Badge kind={p.estado}>{p.estado.replace("_", " ")}</Badge>
+                {p.estado === "pagado" && (
+                  <button className="btn btn-primary btn-sm" onClick={() => enviar(p)}>
+                    Marcar enviado
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -1054,9 +1174,13 @@ function PedidoPage() {
 const TABS = {
   admin: [
     { id: "admin", label: "Administración" },
+    { id: "analytics", label: "Analíticas" },
     { id: "producto", label: "Mis productos" },
   ],
-  producto: [{ id: "producto", label: "Mis productos" }],
+  producto: [
+    { id: "producto", label: "Mis productos" },
+    { id: "ventas", label: "Ventas" },
+  ],
   pedido: [{ id: "pedido", label: "Catálogo" }],
 };
 
@@ -1129,7 +1253,9 @@ export default function App() {
 
       {tabs.length === 0 && <SinRolPage />}
       {active === "admin" && <AdminPage />}
+      {active === "analytics" && <AnalyticsPage />}
       {active === "producto" && <ProductoPage />}
+      {active === "ventas" && <VentasPage />}
       {active === "pedido" && <PedidoPage />}
 
       <footer className="footer">

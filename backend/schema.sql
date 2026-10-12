@@ -37,7 +37,7 @@ CREATE TABLE pedido (
     cliente_id UUID NOT NULL REFERENCES usuario(id),
     total NUMERIC(12,2) NOT NULL,
     estado VARCHAR(20) NOT NULL DEFAULT 'pendiente_pago'
-        CHECK (estado IN ('pendiente_pago','pagado','cancelado')),
+        CHECK (estado IN ('pendiente_pago','pagado','enviado','cancelado')),
     creado_en TIMESTAMP NOT NULL DEFAULT now()
 );
 

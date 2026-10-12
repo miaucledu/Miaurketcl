@@ -18,6 +18,9 @@ const PedidoController = require("./interfaces/pedidoController");
 const UserController = require("./interfaces/userController");
 const ProductoController = require("./interfaces/productoController");
 const SolicitudInteresController = require("./interfaces/solicitudController");
+const AnalyticsService = require("./application/use-cases/analytics/AnalyticsService");
+const PostgresAnalyticsRepository = require("./infrastructure/adapters/out/persistence/PostgresAnalyticsRepository");
+const AnalyticsController = require("./interfaces/analyticsController");
 const { InMemoryCaptchaService } = require("./infrastructure/captcha/InMemoryCaptchaService");
 const authMiddleware = require("./infrastructure/adapters/in/http/middlewares/auth.middleware");
 const roleMiddleware = require("./infrastructure/adapters/in/http/middlewares/role.middleware");
@@ -25,6 +28,7 @@ const upload = require("./infrastructure/adapters/in/http/middlewares/upload.mid
 const productoRoutes = require("./infrastructure/adapters/in/http/routes/productoRoutes");
 const solicitudRoutes = require("./infrastructure/adapters/in/http/routes/solicitudRoutes");
 const pedidoRoutes = require("./infrastructure/adapters/in/http/routes/pedidoRoutes");
+const analyticsRoutes = require("./infrastructure/adapters/in/http/routes/analyticsRoutes");
 
 const app = express();
 app.use(cors());
@@ -45,6 +49,9 @@ const captchaStore = new InMemoryCaptchaService();
 const userController = new UserController(userService, captchaStore);
 const productoController = new ProductoController(productoService);
 const solicitudController = new SolicitudInteresController(solicitudService);
+const analyticsRepository = new PostgresAnalyticsRepository();
+const analyticsService = new AnalyticsService(analyticsRepository);
+const analyticsController = new AnalyticsController(analyticsService);
 
 // Test DB
 pool.query("SELECT 1").then(() => console.log("PostgreSQL conectado")).catch((e) => console.error("DB error:", e.message));
@@ -72,6 +79,9 @@ solicitudRoutes(app, solicitudController, authMiddleware, roleMiddleware);
 
 // Pedidos
 pedidoRoutes(app, pedidoController, authMiddleware, roleMiddleware);
+
+// Analytics (admin)
+analyticsRoutes(app, analyticsController, authMiddleware, roleMiddleware);
 
 // Imágenes estáticas
 app.use("/uploads/productos", express.static(path.join(__dirname, "../../uploads/productos")));

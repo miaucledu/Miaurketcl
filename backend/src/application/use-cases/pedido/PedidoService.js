@@ -54,6 +54,59 @@ class PedidoService {
   async listarPedidosCliente(usuarioId) {
     return this.pedidoRepository.findByClienteId(usuarioId);
   }
+
+  async listarVentasVendedor(vendedorId, esAdmin = false) {
+    return this.pedidoRepository.findByVendedorId(esAdmin ? null : vendedorId);
+  }
+
+  async _getPedido(id) {
+    const pedido = await this.pedidoRepository.findById(id);
+    if (!pedido) {
+      const error = new Error("Pedido no encontrado");
+      error.status = 404;
+      throw error;
+    }
+    return pedido;
+  }
+
+  _error(msg, status) {
+    const error = new Error(msg);
+    error.status = status;
+    throw error;
+  }
+
+  async marcarPagado(pedidoId, usuarioId, esAdmin = false) {
+    const pedido = await this._getPedido(pedidoId);
+    if (!esAdmin && pedido.cliente_id !== usuarioId) this._error("No autorizado", 403);
+    if (pedido.estado !== "pendiente_pago") {
+      this._error(`Solo se puede marcar como pagado un pedido pendiente de pago (actual: ${pedido.estado})`, 400);
+    }
+    await this.pedidoRepository.updateEstado(pedidoId, "pagado");
+    return { id: pedidoId, estado: "pagado" };
+  }
+
+  async cancelarPedido(pedidoId, usuarioId, esAdmin = false) {
+    const pedido = await this._getPedido(pedidoId);
+    if (!esAdmin && pedido.cliente_id !== usuarioId) this._error("No autorizado", 403);
+    if (!["pendiente_pago", "pagado"].includes(pedido.estado)) {
+      this._error(`No se puede cancelar un pedido en estado "${pedido.estado}"`, 400);
+    }
+    await this.pedidoRepository.updateEstado(pedidoId, "cancelado");
+    return { id: pedidoId, estado: "cancelado" };
+  }
+
+  async marcarEnviado(pedidoId, vendedorId, esAdmin = false) {
+    const pedido = await this._getPedido(pedidoId);
+    if (!esAdmin) {
+      const esDuenio = await this.pedidoRepository.productoPerteneceAVendedor(pedidoId, vendedorId);
+      if (!esDuenio) this._error("No autorizado", 403);
+    }
+    if (pedido.estado !== "pagado") {
+      this._error(`Solo se puede enviar un pedido pagado (actual: ${pedido.estado})`, 400);
+    }
+    await this.pedidoRepository.updateEstado(pedidoId, "enviado");
+    return { id: pedidoId, estado: "enviado" };
+  }
 }
 
 module.exports = PedidoService;
