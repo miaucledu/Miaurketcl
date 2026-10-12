@@ -37,15 +37,19 @@ class PedidoService {
     const pedido = new Pedido(null, usuarioId, itemsConDetalle, total, "pendiente_pago");
     const pedidoId = await this.pedidoRepository.create(pedido);
 
-    if (this.notificationService) {
-      await this.notificationService.notifyOrderCreated({
-        id: pedidoId,
-        clientEmail: usuarioEmail,
-        clientName: usuarioNombre,
-        items: itemsConDetalle,
-        total,
-        paymentInstructions: "Realiza tu transferencia a la cuenta bancaria: Banco XXX, CTA 1234-5678, CBU 0000000000000000000000",
-      });
+    if (this.notificationService && usuarioEmail) {
+      try {
+        await this.notificationService.notifyOrderCreated({
+          id: pedidoId,
+          clientEmail: usuarioEmail,
+          clientName: usuarioNombre,
+          items: itemsConDetalle,
+          total,
+          paymentInstructions: "Realiza tu transferencia a la cuenta bancaria: Banco XXX, CTA 1234-5678, CBU 0000000000000000000000",
+        });
+      } catch (e) {
+        console.error("No se pudo enviar la notificación del pedido:", e.message);
+      }
     }
 
     return pedidoId;
