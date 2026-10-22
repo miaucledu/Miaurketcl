@@ -46,7 +46,16 @@ class ProductoService {
       error.status = 403;
       throw error;
     }
-    const producto = new Producto(id, nombre, descripcion, precio, imagen_filename, vendedor_id, "pendiente", existing.creado_en);
+    const producto = new Producto(
+      id,
+      nombre,
+      descripcion,
+      precio,
+      imagen_filename === undefined ? existing.imagen_filename : imagen_filename,
+      vendedor_id,
+      "pendiente",
+      existing.creado_en
+    );
     return await this.productoRepository.update(id, producto);
   }
 

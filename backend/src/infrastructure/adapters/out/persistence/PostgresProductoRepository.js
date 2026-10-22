@@ -46,8 +46,8 @@ class PostgresProductoRepository extends ProductoRepositoryPort {
 
   async update(id, producto) {
     await pool.query(
-      `UPDATE producto SET nombre = $1, descripcion = $2, precio = $3, imagen_filename = $4 WHERE id = $5`,
-      [producto.nombre, producto.descripcion, producto.precio, producto.imagen_filename, id]
+      `UPDATE producto SET nombre = $1, descripcion = $2, precio = $3, imagen_filename = $4, estado = $5 WHERE id = $6`,
+      [producto.nombre, producto.descripcion, producto.precio, producto.imagen_filename, producto.estado, id]
     );
     return id;
   }

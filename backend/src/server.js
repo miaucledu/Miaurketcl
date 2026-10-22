@@ -59,6 +59,9 @@ pool.query("SELECT 1").then(() => console.log("PostgreSQL conectado")).catch((e)
 // Captcha (público)
 app.get("/auth/captcha", (req, res) => res.json(captchaStore.generate()));
 
+// Catálogo público (para chatbot / n8n)
+app.get("/api/publico/catalogo", (req, res) => productoController.listarAprobados(req, res));
+
 // Auth (público)
 app.post("/auth/registro", (req, res) => userController.register(req, res));
 app.post("/auth/login", (req, res) => userController.login(req, res));

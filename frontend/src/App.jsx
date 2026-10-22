@@ -674,6 +674,7 @@ function ProductoPage() {
   const [imagen, setImagen] = useState(null);
   const [preview, setPreview] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [editando, setEditando] = useState(null);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -706,24 +707,54 @@ function ProductoPage() {
       formData.append("nombre", nombre.trim());
       formData.append("descripcion", descripcion.trim());
       formData.append("precio", precio);
-      const res = await fetch(`${API}/productos`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      const res = await fetch(
+        editando ? `${API}/productos/${editando}` : `${API}/productos`,
+        {
+          method: editando ? "PUT" : "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }
+      );
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.msg || "No se pudo crear el producto");
+      if (!res.ok) throw new Error(data.msg || "No se pudo guardar el producto");
+      setEditando(null);
       setNombre("");
       setDescripcion("");
       setPrecio("");
       onFile(null);
       await cargar();
-      setMsg({ type: "ok", text: "Producto publicado. Quedó pendiente de aprobación." });
+      setMsg({
+        type: "ok",
+        text: editando
+          ? "Producto actualizado. Quedó pendiente de aprobación."
+          : "Producto publicado. Quedó pendiente de aprobación.",
+      });
     } catch (err) {
       setMsg({ type: "error", text: err.message });
     } finally {
       setSaving(false);
     }
+  };
+
+  const productoEditando = productos.find((p) => p.id === editando);
+
+  const editar = (p) => {
+    setMsg(null);
+    setEditando(p.id);
+    setNombre(p.nombre);
+    setDescripcion(p.descripcion || "");
+    setPrecio(String(p.precio));
+    onFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelarEdicion = () => {
+    setMsg(null);
+    setEditando(null);
+    setNombre("");
+    setDescripcion("");
+    setPrecio("");
+    onFile(null);
   };
 
   const eliminar = async (p) => {
@@ -743,9 +774,18 @@ function ProductoPage() {
       <div className="card">
         <div className="card-head">
           <div className="grow">
-            <h3>Publicar producto</h3>
-            <p>Completá los datos. Un admin lo revisará antes de publicarlo.</p>
+            <h3>{editando ? "Editar producto" : "Publicar producto"}</h3>
+            <p>
+              {editando
+                ? "Modificá los datos. Al guardar, el producto vuelve a quedar pendiente de aprobación."
+                : "Completá los datos. Un admin lo revisará antes de publicarlo."}
+            </p>
           </div>
+          {editando && (
+            <button className="btn btn-ghost btn-sm" onClick={cancelarEdicion}>
+              Cancelar
+            </button>
+          )}
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
@@ -783,6 +823,14 @@ function ProductoPage() {
             </div>
             <div className="field full">
               <label className="label">Foto</label>
+              {editando && !preview && productoEditando && (
+                <div className="img-preview">
+                  <ProductPhoto
+                    filename={productoEditando.imagen_filename}
+                    nombre={productoEditando.nombre}
+                  />
+                </div>
+              )}
               <input
                 className="input"
                 type="file"
@@ -796,9 +844,22 @@ function ProductoPage() {
               )}
             </div>
           </div>
-          <button className="btn btn-primary" disabled={saving}>
-            {saving && <span className="spinner" />} Publicar producto
-          </button>
+          <div className="btn-row">
+            <button className="btn btn-primary" disabled={saving} style={{ flex: 1 }}>
+              {saving && <span className="spinner" />}
+              {editando ? "Guardar cambios" : "Publicar producto"}
+            </button>
+            {editando && (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={cancelarEdicion}
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -833,12 +894,22 @@ function ProductoPage() {
                     <span className="price">{money(p.precio)}</span>
                     <Badge kind={p.estado}>{p.estado}</Badge>
                   </div>
-                  <button
-                    className="btn btn-danger btn-sm btn-block"
-                    onClick={() => eliminar(p)}
-                  >
-                    Eliminar
-                  </button>
+                  <div className="btn-row">
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      style={{ flex: 1 }}
+                      onClick={() => editar(p)}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="btn btn-danger btn-sm"
+                      style={{ flex: 1 }}
+                      onClick={() => eliminar(p)}
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
